@@ -1,7 +1,7 @@
 {
-  "name": "parcel-project-template",
+  "name": "magic-picture-finder",
   "version": "2.0.0",
-  "description": "",
+  "description": "This project is an image search engine for various topics. The images are copyright-free, completely free to use, and can be utilized for any purpose, including web page layout design.",
   "homepage": "https://MaksymChukhrai.github.io/magic-picture-finder",
   "scripts": {
     "start": "parcel src/*.html",
@@ -9,13 +9,13 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/goitacademy/parcel-project-template.git"
+    "url": "git+https://github.com/MaksymChukhrai/magic-picture-finder.git"
   },
   "keywords": [],
-  "author": "Maksym <maksym.chukhtrai@gmail.com>",
+  "author": "Maksym <maksym.chukhrai@gmail.com>",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/goitacademy/parcel-project-template/issues"
+    "url": "https://github.com/MaksymChukhrai/magic-picture-finder/issues"
   },
   "dependencies": {
     "axios": "^1.4.0",

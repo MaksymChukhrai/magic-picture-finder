@@ -1,2 +1,3 @@
-@import './common';
-@import './_hw-11';
+@use './common' as *;
+
+@use './_hw-11' as *;

@@ -11,9 +11,26 @@ const loadMoreBtn = document.querySelector('.load-more');
 let currentPage = 1;
 const perPage = 40;
 
-const lightbox = new SimpleLightbox('.gallery', {
-  sourceAttr: 'href',
-});
+// Инициализируем переменную для хранения экземпляра лайтбокса
+window.galleryLightbox = null;
+
+// Оптимизированное создание lightbox с правильными настройками
+function initLightbox() {
+  return new SimpleLightbox('.photo-link', {
+    sourceAttr: 'href',
+    overlay: true,
+    overlayOpacity: 0.7,
+    closeOnClick: true, // Убедимся, что клик на оверлее закрывает лайтбокс
+    animationSpeed: 250,
+    alertError: false, // Отключаем встроенные сообщения об ошибках
+    captionPosition: 'bottom',
+    enableKeyboard: true, // Позволяет закрывать с помощью ESC
+    navText: ['‹', '›'], // Текст для навигационных кнопок
+    closeText: '×', // Текст для кнопки закрытия
+    showCounter: true,
+    disableScroll: false // Не отключаем прокрутку, чтобы избежать проблем с размерами
+  });
+}
 
 async function fetchImages(query, page = 1) {
   const apiKey = '36686199-3af1daf12518f9079ef45ad7e';
@@ -24,6 +41,7 @@ async function fetchImages(query, page = 1) {
     return response.data;
   } catch (error) {
     console.error('Error fetching images:', error);
+    Notiflix.Notify.failure('An error occurred when loading images.');
     return null;
   }
 }
@@ -56,13 +74,22 @@ function displayImages(images) {
   const cardsHTML = images.hits.map((image) => createCardHTML(image)).join('');
   gallery.insertAdjacentHTML('beforeend', cardsHTML);
 
-  setTimeout(() => {
-    const lastCard = gallery.lastElementChild;
-    lastCard.scrollIntoView({ behavior: 'smooth', block: 'end' });
-  }, 500);
-
-  const lightbox = new SimpleLightbox('.photo-link', {
-    sourceAttr: 'href',
+  // Используем requestAnimationFrame для уверенности, что DOM полностью обновился
+  requestAnimationFrame(() => {
+    // Инициализируем или обновляем лайтбокс
+    if (window.galleryLightbox) {
+      window.galleryLightbox.refresh();
+    } else {
+      window.galleryLightbox = initLightbox();
+    }
+    
+    // Плавная прокрутка к последнему добавленному элементу
+    setTimeout(() => {
+      const lastCard = gallery.lastElementChild;
+      if (lastCard) {
+        lastCard.scrollIntoView({ behavior: 'smooth', block: 'end' });
+      }
+    }, 500);
   });
 }
 
@@ -76,33 +103,46 @@ async function handleSearchFormSubmit(event) {
   const searchQuery = event.target.elements.searchQuery.value.trim();
 
   if (searchQuery === '') {
+    Notiflix.Notify.warning('Please enter your search query');
     return;
   }
 
   clearGallery();
   currentPage = 1;
 
+  // Закрываем лайтбокс, если он открыт
+  if (window.galleryLightbox) {
+    window.galleryLightbox.close();
+  }
+
   const data = await fetchImages(searchQuery);
-  if (data) {
+  if (data && data.hits.length > 0) {
     displayImages(data);
     if (data.hits.length === perPage) {
-      loadMoreBtn.style.display = 'block';
+      loadMoreBtn.classList.remove('is-hidden');
     } else {
-      loadMoreBtn.style.display = 'none';
-      Notiflix.Notify.warning("We're sorry, but you've reached the end of search results.");
+      loadMoreBtn.classList.add('is-hidden');
+      if (data.hits.length > 0) {
+        Notiflix.Notify.warning("You have reached the end of the search results.");
+      }
     }
 
     showMessage(data.totalHits);
+  } else {
+    Notiflix.Notify.failure('Sorry, nothing found for your query.');
+    loadMoreBtn.classList.add('is-hidden');
   }
 }
 
-// При виконанні запиту та отриманні нових зображень
-// Видаляємо клас is-hidden у кнопки, щоб вона стала видимою
+// При выполнении запроса и получении новых изображений
+// Удаляем класс is-hidden у кнопки, чтобы она стала видимой
 const loadMoreButton = document.querySelector('.load-more');
 loadMoreButton.classList.add('is-hidden');
 
 function showMessage(totalHits) {
-  Notiflix.Notify.warning(`Hooray! We found ${totalHits} images.`);
+  if (totalHits > 0) {
+    Notiflix.Notify.success(`Yay! We found ${totalHits} images.`);
+  }
 }
 
 async function loadMoreImages() {
@@ -111,16 +151,24 @@ async function loadMoreImages() {
   const searchQuery = searchForm.elements.searchQuery.value.trim();
   const data = await fetchImages(searchQuery, currentPage);
 
-  if (data) {
+  if (data && data.hits.length > 0) {
     displayImages(data);
     if (data.hits.length < perPage) {
-      loadMoreBtn.style.display = 'none';
-      Notiflix.Notify.warning("We're sorry, but you've reached the end of search results.");
+      loadMoreBtn.classList.add('is-hidden');
+      Notiflix.Notify.warning("You have reached the end of the search results.");
     }
+  } else {
+    loadMoreBtn.classList.add('is-hidden');
+    Notiflix.Notify.warning("You have reached the end of the search results.");
   }
 }
 
+// Добавляем слушатель события для закрытия лайтбокса при нажатии Escape
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && window.galleryLightbox) {
+    window.galleryLightbox.close();
+  }
+});
+
 searchForm.addEventListener('submit', handleSearchFormSubmit);
 loadMoreBtn.addEventListener('click', loadMoreImages);
-
-  
